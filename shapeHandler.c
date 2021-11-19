@@ -430,6 +430,8 @@ void gameClockInit()
 {
     Timer32_initModule(TIMER32_0_BASE, TIMER32_PRESCALER_1, TIMER32_32BIT, TIMER32_PERIODIC_MODE);
     Timer32_disableInterrupt(TIMER32_0_BASE);
+    Timer32_initModule(TIMER32_1_BASE, TIMER32_PRESCALER_1, TIMER32_32BIT, TIMER32_PERIODIC_MODE);
+    Timer32_disableInterrupt(TIMER32_1_BASE);
 }
 
 /*
@@ -624,6 +626,7 @@ void ADC14_IRQHandler(void)
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_YELLOW);
             myDrawShape(shapeSelect);
 
+            start_counter = 1 * 3 * 1000000;      //Effectively speeds up the game timer while holding the joystick down.
         }
 
         //Joystick DeBounce
@@ -631,10 +634,13 @@ void ADC14_IRQHandler(void)
         {
             xJoystickLock = 0;
         }
+
         if(resultsBuffer[1] > 6000 && resultsBuffer[1] < 10000)
         {
             yJoystickLock = 0;
+            start_counter = 5 * 3 * 1000000;      //Sets the game speed back to the original time.
         }
+
         /* Determine if JoyStick button is pressed
         if (!(P4IN & GPIO_PIN1))
             r = 10;
