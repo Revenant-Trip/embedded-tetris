@@ -11,8 +11,6 @@ Graphics_Context g_sContext;
 
 #define width 5
 
-
-
-
 struct Tetromino shapeLib(int shapeSelectVar, int rotation);
-void drawShape(int shapeSelectVar, int positionXY[], int rotation);
+int** positionUpdater(int shapeSelectVar, int positionXY[], int rotation);
+void drawShape(struct Tetromino shape, int postiontXY[]);

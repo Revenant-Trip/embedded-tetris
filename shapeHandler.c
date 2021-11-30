@@ -1,3 +1,20 @@
+/*
+ * shapeHandler - draws shapes and returns collision checking matrix #WIP
+ *
+ * For use add:
+ *      #include "shapeHandler.h"
+ *
+ *      ...
+ *
+ *      collisionHandler(int shapeSelectVar, int positionXY[], int rotation);
+ *
+ * This will choose which shape is currently drawn and should automatically reset positionXY[] and rotation
+ * when collision is detected and a new piece is spawned.
+ *
+ *  Created on: 11/14/21 (modified 11/30/21)
+ *      Author: Kenneth J. Rudnicki
+ */
+
 #include "shapeHandler.h"
 
 Graphics_Rectangle standardRect = {0, 0, 0 + width, 0 + width};   //Defines the standard size of each rectangle using the width parameter
@@ -5,27 +22,26 @@ Graphics_Rectangle standardRect = {0, 0, 0 + width, 0 + width};   //Defines the 
 //This struct may not be necessary, but it works
 struct Tetromino {
     int matrix[5][5];    //All tetrominoes can fit into a 4x4 matrix, however the last two columns of row 5 contain the bounds for drawing the shape quickly to increase performance.
-
+    int positionMap[12][21];
 };
-
 
 
 //Uses the shapeLib() function, this program draws a single rectangle for each value of 1 in the shape matrix.
 //Temporarily references the shapeSelect defined in main.c
 
-void drawShape(int shapeSelectVar,int positionXY[], int rotation)
+void drawShape(struct Tetromino shape, int positionXY[])
 {
-    struct Tetromino shape = shapeLib(shapeSelectVar, rotation);
-
     Graphics_Rectangle tempRect = {0, 0, 0, 0};
 
     int i, j;
+
     for(i = 0; i < shape.matrix[4][4]; i++)   // uses the recorded height in shape matrix
     {
         for(j = 0; j < shape.matrix[4][3]; j++)  // uses the recorded width in shape matrix
         {
             if(shape.matrix[i][j] == 1)
             {
+                //draws the graphical shape
                 int xCord = ((width * j) + j) + positionXY[0];
                 int yCord = ((width * i) + i) + positionXY[1];
                 tempRect = (Graphics_Rectangle) {standardRect.xMin + xCord,
@@ -38,6 +54,35 @@ void drawShape(int shapeSelectVar,int positionXY[], int rotation)
     }
 }
 
+
+int ** positionUpdater(int shapeSelectVar, int positionXY[], int rotation)
+{
+    struct Tetromino shape = shapeLib(shapeSelectVar, rotation);
+
+    int i, j;
+
+    //Clears the positionMap so it can be updated.
+    for(i = 0; i < 12; i++)
+    {
+        for(j = 0; j < 21; j++)
+        {
+            shape.positionMap[i][j] = 0;
+        }
+    }
+
+    for(i = 0; i < shape.matrix[4][4]; i++)   // uses the recorded height in shape matrix
+    {
+        for(j = 0; j < shape.matrix[4][3]; j++)  // uses the recorded width in shape matrix
+        {
+            if(shape.matrix[i][j] == 1)
+            {
+                //maps the shape onto an invisible board to compare with the main game board
+                shape.positionMap[i + (positionXY[0]/(width + 1))][j + (positionXY[1]/(width + 1))] = 1;
+            }
+        }
+    }
+    return shape.positionMap;
+}
 
 
 //This is a library of all the shapes and their rotational possibilities
