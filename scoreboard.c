@@ -58,13 +58,14 @@ struct Score {
  * the score_update function
  */
 
-struct Score score_init(Graphics_Context* g_sContext)
+struct Score score_init(Graphics_Context* g_sContext, struct Score* s)
 {
     Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_WHITE);
     
     // sets initial score data
     int n = rand() % 7;
-    struct Score s = {n, 0};
+    s->nextBlock = n;
+    s->linesCleared = 0;
 
     // prints score data and format to LCD
     Graphics_drawString(&g_sContext, "Lines", -1, 80, 30, true);
@@ -77,9 +78,11 @@ struct Score score_init(Graphics_Context* g_sContext)
  * 
  * Clears score display, increments lines cleared and generates a new block,
  * then displays new score data
+ *
+ * Changes: int to void (in main: update struct linesCleared from global, update global nextBlock from struct)
  */
 
-int score_update(Graphics_Context* g_sContext, struct Score* s, int lines)
+void score_update(Graphics_Context* g_sContext, struct Score* s)
 {
     char buffer[10];        // string buffer for printing lines cleared
     int n = s->nextBlock;   // saves next block for later return
@@ -95,7 +98,6 @@ int score_update(Graphics_Context* g_sContext, struct Score* s, int lines)
     // erases shape from scoreboard
 
     // updates lines cleared and next block
-    s->linesCleared = lines;
     int n = rand() % 7;
 
     // writes new score data to LCD
@@ -107,8 +109,4 @@ int score_update(Graphics_Context* g_sContext, struct Score* s, int lines)
     // need to be able to pass in indices to myDrawShape in order to print out next block
     // myDrawShape(s->nextBlock, x, y)
     // writes new shape onto scoreboard
-
-    // returns current shape
-    return n;
 }
-
