@@ -99,9 +99,10 @@ Checks if the game over condition is met, whether the top is filled up
 */
 void gameState(int **board){
     for(int j=0; j<COL; j++){
-        if(board[0][j] == 1){
+        if(board[0][j] == 1){ //checks if there is a block in the first row, if so game is over
               gameOver = true;
-        printf("Game Over \n ");
+        printf("Game Over \n "); //for testing purposes
+        freeBoard(board); //frees board when game over
         break;
         }
     }
@@ -137,14 +138,26 @@ void checkLine(int **board){
       for(int j=0;j<COL;j++) {
          if(board[i][j] == 1){
             numberOfOnes++;
-            printf("number of 1's = %d\n",numberOfOnes);
+            printf("number of 1's = %d\n",numberOfOnes); //for testing purposes
          }
       }
       if(numberOfOnes == COL){
-            printf("line needs to be cleared\n");
+            printf("line needs to be cleared\n"); //for testing purposes
         clearLine(board, i);
       }
    }
 
 }
+
+/*
+Frees allocated board from memory
+*/
+void freeBoard(int **board){
+ for(int i = 0; i < ROW; i++){
+        free(board[i]);
+    }
+
+ free(board);
+}
+
 
