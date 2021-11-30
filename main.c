@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define ROW 10
-#define COL 21
+#define ROW 21
+#define COL 12
 
 bool gameOver;
 
@@ -20,25 +20,6 @@ int main()
    int **board= boardInit();
    printBoard(board);
 
-   for(int j=0; j<COL; j++){
-       board[9][j] = 1;
-   }
-     for(int j=0; j<COL; j++){
-       board[8][j] = 1;
-   }
-
-       for(int j=0; j<COL-2; j++){
-       board[7][j] = 1;
-   }
-
-
-    board[5][20] = 1 ;
-    printBoard(board);
-    checkLine(board);
-
-    printBoard(board);
-
-    board[0][5] = 1 ;
 
     gameState(board);
 
@@ -71,7 +52,11 @@ int **boardInit(){
         for(j = 0; j < COL; j++){
             board[i][j] = 0;
         }
+        board[i][0] = 1;
+        board[i][11] = 1;
     }
+    board[0][0] = 0;
+    board[0][11] = 0;
 
     gameOver = false;
 
@@ -159,5 +144,6 @@ void freeBoard(int **board){
 
  free(board);
 }
+
 
 
