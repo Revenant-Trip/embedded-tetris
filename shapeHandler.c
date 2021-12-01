@@ -11,7 +11,7 @@
  * This will choose which shape is currently drawn and should automatically reset positionXY[] and rotation
  * when collision is detected and a new piece is spawned.
  *
- *  Created on: 11/14/21 (modified 11/30/21)
+ *  Created on: 11/14/22 (modified 11/30/22)
  *      Author: Kenneth J. Rudnicki
  */
 
@@ -22,15 +22,16 @@ Graphics_Rectangle standardRect = {0, 0, 0 + width, 0 + width};   //Defines the 
 //This struct may not be necessary, but it works
 struct Tetromino {
     int matrix[5][5];    //All tetrominoes can fit into a 4x4 matrix, however the last two columns of row 5 contain the bounds for drawing the shape quickly to increase performance.
-    int positionMap[12][21];
+    int positionMap[12][22];
 };
 
 
 //Uses the shapeLib() function, this program draws a single rectangle for each value of 1 in the shape matrix.
 //Temporarily references the shapeSelect defined in main.c
-
-void drawShape(struct Tetromino shape, int positionXY[])
+void drawShape(int shapeSelectVar, int positionXY[], int rotation)
 {
+    struct Tetromino shape = shapeLib(shapeSelectVar, rotation);
+
     Graphics_Rectangle tempRect = {0, 0, 0, 0};
 
     int i, j;
@@ -54,8 +55,8 @@ void drawShape(struct Tetromino shape, int positionXY[])
     }
 }
 
-
-int ** positionUpdater(int shapeSelectVar, int positionXY[], int rotation)
+//#FIXME   There is an issue with passing the collisionMapPtr data and as a result all collisions are broken.
+void positionUpdater(int shapeSelectVar, int positionXY[], int rotation, int collisionMapPtr[12][22])
 {
     struct Tetromino shape = shapeLib(shapeSelectVar, rotation);
 
@@ -64,9 +65,9 @@ int ** positionUpdater(int shapeSelectVar, int positionXY[], int rotation)
     //Clears the positionMap so it can be updated.
     for(i = 0; i < 12; i++)
     {
-        for(j = 0; j < 21; j++)
+        for(j = 0; j < 22; j++)
         {
-            shape.positionMap[i][j] = 0;
+            collisionMapPtr[i][j] = 0;
         }
     }
 
@@ -77,16 +78,31 @@ int ** positionUpdater(int shapeSelectVar, int positionXY[], int rotation)
             if(shape.matrix[i][j] == 1)
             {
                 //maps the shape onto an invisible board to compare with the main game board
-                shape.positionMap[i + (positionXY[0]/(width + 1))][j + (positionXY[1]/(width + 1))] = 1;
+                collisionMapPtr[i + ((positionXY[0] - 4)/(width + 1))][j + ((positionXY[1]-4)/(width + 1))] = 1;
             }
         }
     }
-    return shape.positionMap;
+}
+
+
+//returns a 1 if the shape overlaps the game board.
+int collisionCheck(int** collisionMap, int** board)
+{
+    int i, j;
+
+    for(i = 0; i < 12; i++)
+    {
+        for(j = 0; j < 22; j++)
+        {
+            if(collisionMap[i][j] + board[i][j] == 2)
+                return 1;
+        }
+    }
+    return 0;
 }
 
 
 //This is a library of all the shapes and their rotational possibilities
-
 struct Tetromino shapeLib(int shapeSelectVar, int rotation)
 {
     int i, j;
