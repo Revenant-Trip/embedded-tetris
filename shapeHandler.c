@@ -56,7 +56,7 @@ void drawShape(int shapeSelectVar, int positionXY[], int rotation)
 }
 
 //#FIXME   There is an issue with passing the collisionMapPtr data and as a result all collisions are broken.
-void positionUpdater(int shapeSelectVar, int positionXY[], int rotation, int collisionMapPtr[12][22])
+void positionUpdater(int shapeSelectVar, int positionXY[], int rotation, int** collisionMap)
 {
     struct Tetromino shape = shapeLib(shapeSelectVar, rotation);
 
@@ -67,7 +67,7 @@ void positionUpdater(int shapeSelectVar, int positionXY[], int rotation, int col
     {
         for(j = 0; j < 22; j++)
         {
-            collisionMapPtr[i][j] = 0;
+            collisionMap[i][j] = 0;
         }
     }
 
@@ -78,27 +78,25 @@ void positionUpdater(int shapeSelectVar, int positionXY[], int rotation, int col
             if(shape.matrix[i][j] == 1)
             {
                 //maps the shape onto an invisible board to compare with the main game board
-                collisionMapPtr[i + ((positionXY[0] - 4)/(width + 1))][j + ((positionXY[1]-4)/(width + 1))] = 1;
+                collisionMap[i + ((positionXY[0] - 4)/(width + 1))][j + ((positionXY[1]-4)/(width + 1))] = 1;
             }
         }
     }
 }
 
 
-//returns a 1 if the shape overlaps the game board.
-int collisionCheck(int** collisionMap, int** board)
-{
+//Returns a 1 on collision.  Written by Nick
+int checkCollision(int **board, int **collisionMap){
     int i, j;
 
-    for(i = 0; i < 12; i++)
-    {
-        for(j = 0; j < 22; j++)
-        {
-            if(collisionMap[i][j] + board[i][j] == 2)
+     for(i = 0; i < 12; i++){
+        for(j = 0; j < 21; j++){
+            if((board[i][j] == 1) && (collisionMap[i][j] == 1)){
                 return 1;
+            }
         }
-    }
-    return 0;
+     }
+     return 0;
 }
 
 

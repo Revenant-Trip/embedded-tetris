@@ -45,7 +45,7 @@
 #include <stdbool.h>
 
 #define ROW 12
-#define COL 22
+#define COL 21
 
 /* ADC results buffer */
 static uint16_t resultsBuffer[2];
@@ -56,10 +56,8 @@ int positionXY[2] = {28, 4};        //Initial position of spawned pieces
 int rotation = 0;                   //range from 0 to 3.
 
 bool gameOver;
-int* collisionMap;
-int* boardPtr;
-int* collisionMapPtr;
 int collisionFlag;
+
 
 //This game clock is used to continuously force the piece down.
 void gameClockInit()
@@ -126,25 +124,11 @@ int main(void)
             ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A9, ADC_NONDIFFERENTIAL_INPUTS);
 
-    int i,j;
 
     gameClockInit();
     bool gameOver = false;
-    int board[12][22] = {0};
-    for(j = 0; j < 22; j ++)
-    {
-        board[0][j] = 1;
-        board[11][j] = 1;
-    }
-    for(i = 0; i < 12; i ++)
-    {
-        board[i][0] = 1;
-        board[i][21] = 1;
-    }
-
-    boardPtr = &board[0][0];
-    int collisionMap[12][22] = {0};
-    collisionMapPtr = &collisionMap[0][0];
+    int** boards[2];
+    boardInit(boards);
 
     //Making a simple grid.
 
@@ -153,6 +137,7 @@ int main(void)
     Graphics_fillRectangle(&g_sContext, &backgroundSquare);
     Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_BLACK);
     Graphics_Rectangle tempRect;
+    int i,j;
     for(i = 0; i < 20; i++)   // uses the recorded height in shape matrix
     {
         for(j = 0; j < 10; j++)  // uses the recorded width in shape matrix
@@ -172,8 +157,7 @@ int main(void)
     //Draws the first shape
     Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_YELLOW);
     drawShape(shapeSelect, positionXY, rotation);
-    positionUpdater(shapeSelect, positionXY, rotation, &collisionMapPtr);
-    collisionFlag = collisionCheck(&collisionMapPtr, &boardPtr);
+    positionUpdater(shapeSelect, positionXY, rotation, boards[1]);
 
 
     /* Enabling the interrupt when a conversion on channel 1 (end of sequence)
@@ -195,10 +179,14 @@ int main(void)
 
     MAP_PCM_gotoLPM0();
 
-    while(1)
+    while(gameOver == false)
     {
+        //Hopefully this checks for collision inbetween every interrupt. Definetly cursed   #FIXME
+        positionUpdater(shapeSelect, positionXY, rotation, boards[1]);
+        collisionFlag = checkCollision(boards[1], boards[0]);
+
         static int gameClockTracker = 0;
-        if(gameClockTracker == 0 && collisionFlag == 0)
+        if(gameClockTracker == 0)
         {
             Timer32_haltTimer(TIMER32_0_BASE);
             Timer32_setCount(TIMER32_0_BASE, start_counter);
@@ -209,20 +197,24 @@ int main(void)
 
             positionXY[1] += width + 1;
 
-            positionUpdater(shapeSelect, positionXY, rotation, &collisionMapPtr);
-            if(collisionFlag == 0)
+            positionUpdater(shapeSelect, positionXY, rotation, boards[1]);
+            collisionFlag = checkCollision(boards[1], boards[0]);
+
+            if(collisionFlag == 1)
             {
-                Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_YELLOW);
-                drawShape(shapeSelect, positionXY, rotation);
-            }
-            else
-            {
+                collisionFlag = 0;
+                positionXY[1] -= width + 1;
+
                 // NEED TO UPDATE THE GAME BOARD AS THE SUM OF THE COLLISION MAP AND THE GAME BOARD   // #FIXME
+
                 positionXY[1] = 4;
                 shapeSelect++;
                 if(shapeSelect > 6)
                     shapeSelect = 0;
             }
+
+            Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_YELLOW);
+            drawShape(shapeSelect, positionXY, rotation);
 
         }
         gameClockTracker = Timer32_getValue(TIMER32_0_BASE);
@@ -230,6 +222,7 @@ int main(void)
 }
 
 
+//FIXME   Needs to have the ability to check for collision. Problem with passing boards[] into interrupt.
 /* This interrupt is fired whenever a conversion is completed and placed in
  * ADC_MEM1. This signals the end of conversion and the results array is
  * grabbed and placed in resultsBuffer */
@@ -253,11 +246,9 @@ void ADC14_IRQHandler(void)
     	resultsBuffer[0] = ADC14_getResult(ADC_MEM0);
     	resultsBuffer[1] = ADC14_getResult(ADC_MEM1);
 
-    	positionUpdater(shapeSelect, positionXY, rotation, &collisionMap);
-    	collisionFlag = collisionCheck(&collisionMap, &boardPtr);
 
     	//Attempt to move piece to the left, check collision and draw result.
-        if(resultsBuffer[0] < 6000  &&  collisionFlag == 0 && xJoystickLock == 0)
+        if(resultsBuffer[0] < 6000 && xJoystickLock == 0)
         {
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_BLACK);
             drawShape(shapeSelect, positionXY, rotation);
@@ -265,18 +256,36 @@ void ADC14_IRQHandler(void)
             positionXY[0] -= width + 1;
             xJoystickLock = 1;
 
+            //updatePosition
+            //checkCollision
+
+            if(collisionFlag == 1)
+            {
+                collisionFlag = 0;
+                positionXY[0] += width + 1;
+            }
+
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_YELLOW);
             drawShape(shapeSelect, positionXY, rotation);
         }
 
         //Attempt to move piece to right, check collision and draw result;
-        else if(resultsBuffer[0] > 10000 && collisionFlag == 0 && xJoystickLock == 0)
+        else if(resultsBuffer[0] > 10000 && xJoystickLock == 0)
         {
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_BLACK);
             drawShape(shapeSelect, positionXY, rotation);
 
             positionXY[0] += width + 1;
             xJoystickLock = 1;
+
+            //updatePosition
+            //checkCollision
+
+            if(collisionFlag == 1)
+            {
+                collisionFlag = 0;
+                positionXY[0] -= width + 1;
+            }
 
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_YELLOW);
             drawShape(shapeSelect, positionXY, rotation);
@@ -285,13 +294,30 @@ void ADC14_IRQHandler(void)
 
         //Attempt to move piece down, check collision and draw result
         //Extended hold also increases clock update speed.
-        if(resultsBuffer[1] < 6000 && collisionFlag == 0 && yJoystickLock == 0)
+        if(resultsBuffer[1] < 6000 && yJoystickLock == 0)
         {
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_BLACK);
             drawShape(shapeSelect, positionXY, rotation);
 
             positionXY[1] += width + 1;
             yJoystickLock = 1;
+
+            //updatePosition
+            //checkCollision
+
+            if(collisionFlag == 1)
+            {
+                collisionFlag = 0;
+                positionXY[1] -= width + 1;
+
+                // NEED TO UPDATE THE GAME BOARD AS THE SUM OF THE COLLISION MAP AND THE GAME BOARD   // #FIXME
+
+                positionXY[1] = 4;
+                shapeSelect++;
+                if(shapeSelect > 6)
+                    shapeSelect = 0;
+            }
+
 
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_YELLOW);
             drawShape(shapeSelect, positionXY, rotation);
@@ -310,9 +336,8 @@ void ADC14_IRQHandler(void)
             start_counter = 5 * 3 * 1000000;      //Sets the game speed back to the original time.
         }
 
-        //Rotation handler using buttons.                   #FIXME Needs to check for future collision of rotated piece
-                                                            //currently only uses initial collision check
-        if(~P3IN & 0x20 && collisionFlag == 0 && buttonDebounce == 0)
+        //Rotation handler using buttons.
+        if(~P3IN & 0x20 && buttonDebounce == 0)
         {
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_BLACK);
             drawShape(shapeSelect, positionXY, rotation);
@@ -322,10 +347,21 @@ void ADC14_IRQHandler(void)
                 rotation = 0;
             buttonDebounce = 1;
 
+            //updatePosition
+            //checkCollision
+
+            if(collisionFlag == 1)
+            {
+                collisionFlag = 0;
+                rotation --;
+                if(rotation < 0)
+                    rotation = 3;
+            }
+
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_YELLOW);
             drawShape(shapeSelect, positionXY, rotation);
         }
-        else if(~P5IN & 0x02 && collisionFlag == 0 && buttonDebounce == 0)
+        else if(~P5IN & 0x02 && buttonDebounce == 0)
         {
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_BLACK);
             drawShape(shapeSelect, positionXY, rotation);
@@ -334,6 +370,17 @@ void ADC14_IRQHandler(void)
             if(rotation < 0)
                 rotation = 3;
             buttonDebounce = 1;
+
+            //updatePosition
+            //checkCollision
+
+            if(collisionFlag == 1)
+            {
+                collisionFlag = 0;
+                rotation ++;
+                if(rotation > 3)
+                    rotation = 0;
+            }
 
             Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_YELLOW);
             drawShape(shapeSelect, positionXY, rotation);
@@ -344,31 +391,41 @@ void ADC14_IRQHandler(void)
     }
 }
 
-/*
- * I tried to initialize the board in main, but am still having the same unexpected interrupt error..
- *
- *
-Initializes board by allocating memory for it
 
-void boardInit(int** boardPtr){
+
+//Initializes board by allocating memory for it
+void boardInit(int*** boards){
     int i, j;
 
-    malloc was misbehaving and causing an unexpected interrupt. or so I thought
     //allocates memory for board
-    int board[ROW][COL];
-    board = malloc(sizeof(int*)* ROW);
+    int** board = (int**)malloc(sizeof(int*) * ROW);
+    int** collisionMap = (int**)malloc(sizeof(int*) * ROW);
 
     for(i = 0; i < ROW; i++){
-        board[i] = malloc(sizeof(int*) * COL);
+        board[i] = (int*)malloc(sizeof(int) * COL);
+        collisionMap[i] = (int*)malloc(sizeof(int) * COL);
     }
 
+    //Ensures both boards are all zeroes
+    for(i = 0; i < ROW; i++){
+        for(j = 0; j < COL; j++){
+            board[i][j] = 0;
+            collisionMap[i][j] = 0;
+        }
+    }
 
+    // adds a boarder of 1s for the game board.
+    for(i = 0; i < ROW; i++){
+        board[i][21] = 1;
+    }
     for(j = 0; j < COL; j++){
-        boardPtr[0][j] = 1;
-        boardPtr[11][j] = 1;
+        board[0][j] = 1;
+        board[11][j] = 1;
     }
+    boards[0] = board;
+    boards[1] = collisionMap;
 }
-*/
+
 
 /*
 Checks if the game over condition is met, whether the top is filled up

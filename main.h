@@ -13,7 +13,7 @@ Graphics_Context g_sContext;
 Graphics_Rectangle gridRect = {0, 0, 0 + width, 0 + width};   //Defines the standard size of each rectangle using the width parameter
 
 
-void boardInit(int **board);
+void boardInit(int ***boards);
 void gameState(int **board);
 void clearLine(int **board, int lineClear);
 void checkLine(int **board);
