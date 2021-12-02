@@ -207,6 +207,7 @@ int main(void)
 
                 // NEED TO UPDATE THE GAME BOARD AS THE SUM OF THE COLLISION MAP AND THE GAME BOARD   // #FIXME
 
+                positionXY[0] = 28;
                 positionXY[1] = 4;
                 shapeSelect++;
                 if(shapeSelect > 6)
@@ -312,6 +313,7 @@ void ADC14_IRQHandler(void)
 
                 // NEED TO UPDATE THE GAME BOARD AS THE SUM OF THE COLLISION MAP AND THE GAME BOARD   // #FIXME
 
+                positionXY[0] = 28;
                 positionXY[1] = 4;
                 shapeSelect++;
                 if(shapeSelect > 6)
