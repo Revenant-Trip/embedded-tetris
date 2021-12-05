@@ -490,7 +490,7 @@ void checkLine(int **board){
 /*
 Updates board after down colission
 */
-void boardUpdater(int shapeSelectVar, int positionXY[], int rotation, int** board)
+void boardUpdater(int shapeSelectVar, int positionXY[], int rotation, int **board)
 {
     struct Tetromino shape = shapeLib(shapeSelectVar, rotation);
 
@@ -515,7 +515,7 @@ void boardUpdater(int shapeSelectVar, int positionXY[], int rotation, int** boar
 /*
 Draws board after a down colission resulting in at least one line clear
 */
-void boardDraw(int** board)
+void boardDraw(int **board)
 {
     Graphics_Rectangle tempRect = {0, 0, 0, 0};
 
