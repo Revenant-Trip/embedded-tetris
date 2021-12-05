@@ -487,6 +487,64 @@ void checkLine(int **board){
 
 }
 
+/*
+Updates board after down colission
+*/
+void boardUpdater(int shapeSelectVar, int positionXY[], int rotation, int** board)
+{
+    struct Tetromino shape = shapeLib(shapeSelectVar, rotation);
+
+    int i, j;
+    
+        }
+    }
+
+    for(i = 0; i < shape.matrix[4][4]; i++)   // uses the recorded height in shape matrix
+    {
+        for(j = 0; j < shape.matrix[4][3]; j++)  // uses the recorded width in shape matrix
+        {
+            if(shape.matrix[i][j] == 1)
+            {
+                //maps the shape onto the game board
+                board[i + ((positionXY[0] - 4)/(width + 1))][j + ((positionXY[1]-4)/(width + 1))] = 1;
+            }
+        }
+    }
+}
+
+/*
+Draws board after a down colission resulting in at least one line clear
+*/
+void boardDraw(int** board)
+{
+    Graphics_Rectangle tempRect = {0, 0, 0, 0};
+
+    int i, j;
+
+    for(i = 0; i < ROW; i++)   // uses the recorded height in shape matrix
+    {
+        for(j = 0; j < COL; j++)  // uses the recorded width in shape matrix
+        {
+            if(board[i][j] == 1)
+            {
+                Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_YELLOW);
+            }
+            else
+            {
+                Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_BLACK);
+            }
+            //draws the graphical shape
+            int xCord = ((width * j) + j) + positionXY[0];
+            int yCord = ((width * i) + i) + positionXY[1];
+            tempRect = (Graphics_Rectangle) {standardRect.xMin + xCord,
+                                             standardRect.yMin + yCord, //+ positionXY[1],
+                                             standardRect.xMax + xCord - 1, //+ positionXY[0],
+                                             standardRect.yMax + yCord - 1}; //+ positionXY[1]};
+            Graphics_fillRectangle(&g_sContext, &tempRect);
+            }
+        }
+    }
+}
 
 /*
 Frees allocated board from memory
