@@ -17,4 +17,6 @@ void boardInit(int ***boards);
 void gameState(int **board);
 void clearLine(int **board, int lineClear);
 void checkLine(int **board);
+void boardUpdater(int shapeSelectVar, int positionXY[], int rotation, int **board);
+void boardDraw(int **board);
 void freeBoard(int **board);
